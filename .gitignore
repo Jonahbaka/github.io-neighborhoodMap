@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 node_modules
 package.json
 .DS_Store
+=======
+_site/
+.sass-cache/
+>>>>>>> 9d763209dc34b7b1a66870740e4d748a394edeb6

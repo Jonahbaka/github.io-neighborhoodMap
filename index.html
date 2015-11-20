@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+
+    <title>Google Map Project</title>
+    <!--Google Maps-->
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places" ></script> 
+    <!--inline CSS-->
+    <style>*,:after,:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}@media (min-width:768px){.form-inline .form-group{display:inline-block;margin-bottom:0;vertical-align:middle}.form-inline .form-control{display:inline-block;width:auto;vertical-align:middle}.form-inline .form-control-static{display:inline-block}.form-inline .input-group{display:inline-table;vertical-align:middle}.form-inline .input-group .form-control,.form-inline .input-group .input-group-addon,.form-inline .input-group .input-group-btn{width:auto}.form-inline .input-group>.form-control{width:100%}}.input-group .form-control,.input-group-addon,.input-group-btn{display:table-cell}.input-group-addon{padding:6px 12px;font-size:14px;line-height:1;text-align:center}.form-control{height:34px;padding:6px 12px;background-color:#fff;background-image:none;border:1px solid #ccc}.form-control,output{display:block;font-size:14px;line-height:1.42857143;color:#555}.btn{display:inline-block;margin-bottom:0;font-weight:400;text-align:center;vertical-align:middle;background-image:none;border:1px solid transparent;padding:6px 12px;font-size:14px;line-height:1.42857143}#map-canvas{width:100%;height:100%}.container-fluid{margin-top:20px}.btn-default,.form-control,.input-group-addon{border-radius:0}.form-control{width:170px;-webkit-box-shadow:none;box-shadow:none}.input-group-addon{font-weight:300;color:#fff;background-color:#333;border:none}.nh-info-box{margin-top:5px;font-size:18px;font-weight:300;width:460px;background:#5cb85c}.nh-info-box h1{font-size:28px;margin-top:10px;font-weight:300}.nh-info-box .nh-formatted-address{position:relative;padding:10px;width:55%;float:left;color:#fff}.current-temp-box .current-temp-showhide,.nh-formatted-address .venues-box-showhide{position:absolute;top:5px;right:5px;z-index:200}.nh-formatted-address .venues-box-showhide{color:#333}.nh-info-box .current-temp-box{position:relative;padding:10px;float:left;width:45%;height:100%;background:#fff}.nh-info-box .current-temp-box .left{width:110px;float:left}.nh-info-box .current-temp-box .left .current-temp{float:left;font-size:40px}.nh-info-box .current-temp-box .left .right-now{font-size:14px}.nh-info-box .current-temp-box .right .right-now-icon{float:right;font-size:18px;padding:10px 10px 0 0}.fixed-container{width:520px;position:absolute;z-index:100;top:5px;padding:0 5px}@media only screen and (max-width :768px){.fixed-container{width:100%}.search-button{display:none}.form-group{margin-bottom:5px}.nh-info-box{width:300px;font-size:14px;position:fixed;bottom:0}.nh-info-box .current-temp-box .left .right-now,.nh-info-box .current-temp-box .right .right-now-icon{display:none}.nh-info-box .current-temp-box .left .current-temp{font-size:20px}}@media only screen and (max-width :320px){.fixed-container{width:100%}}
+    </style>
+
+  </head>
+  <body>
+    <div id="googleMap-API-error"></div>
+    <div id="map-canvas"></div>
+    <div class="fixed-container">
+      <form class="form-inline" role="form">
+        <!-- Search top selected venues by keywords -->
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">Find</div>
+            <input data-bind="value: exploreKeyword" type="search" name ="search" class="form-control" id="explore-venues" placeholder="Popular Places">
+          </div>             
+        </div>
+        <!-- Search top selected venues by location -->
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">Near</div>
+            <input data-bind="value: neighborhood" type="search" name ="search" class="form-control" id="neighborhood-location" placeholder="Neighborhood">
+          </div>             
+        </div>
+        <!-- Search button -->
+        <button type="button" class="btn btn-default btn-md search-button"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+      </form>
+      <!-- Overview information window -->
+      <div id="nh-info" class="nh-info-box group">
+        <div class="nh-formatted-address">
+          <span data-bind="text: formattedAddress"></span>
+          <div class="venues-box-showhide" data-bind="click:updateVObservable()"><span data-bind="css: {'glyphicon-plus': !displayVenuesList(), 'glyphicon-minus': displayVenuesList()}" class="glyphicon"></span></div>
+        </div>             
+        <div class="current-temp-box">
+          <div class="left">
+            <div class="right-now">Right Now</div>
+            <div data-bind="text: currentlyForecast().temperature" class="current-temp"></div><span>&deg;</span>
+          </div>
+
+          <div class="right">
+            <div class="right-now-icon">
+              <canvas data-bind="css: currentlyForecast().icon, afterHtmlRender: skycons()" width="64" height="64"></canvas>
+            </div>
+          </div>
+          
+          <div class="current-temp-showhide" data-bind="click:updateFObservable()"><span data-bind="css: {'glyphicon-plus': !displayForecastsList(), 'glyphicon-minus': displayForecastsList()}" class="glyphicon"></span></div>
+        
+        </div>               
+      </div>
+      <!-- Daily fourcasts info -->
+      <div data-bind="visible: displayForecastsList" id="forecast-listing" class="forecast-listing-box" style="display:none">
+        <div id="forecast-API-error"></div>
+        <!-- ko foreach: dailyForecasts() -->
+        <div class="forecast-listing-item group">
+          <div class="left">
+            <div data-bind="text: formattedTime" class="day-name"></div>    
+          </div>
+          <div class="middle">
+            <div class="day-icon">
+              <canvas data-bind="css: icon, afterHtmlRender:$parent.skycons()" width="64" height="64"></canvas>
+            </div>
+          </div>
+          <div class="right">
+            <div class="day-temp-range">
+              <span data-bind="text: temperatureMin"></span><span>&deg;</span> - <span data-bind="text: temperatureMax"></span><span>&deg;</span></div>
+            <div data-bind="text: summary" class="day-info"></div>
+          </div>
+        </div>
+        <!-- /ko -->
+      </div>
+
+      <!-- Top pick venues info -->
+      <div data-bind="visible: displayVenuesList" id="venues-listing" class="venues-listing-box" style="display:none"> 
+        <div id="foursquare-API-error"></div>
+        <!-- ko foreach: topPicks() -->
+        <div data-bind="css:{'selected-venue-item': id === $root.selectedVenue()}, click: $root.panToMarker" class="venue-listing-item group">
+          <div class="left">
+            <div data-bind="text: name" class="venue-name"></div>
+            <div class="venue-sub group">
+              <div class="venue-rating"><span data-bind="text: rating" class="badge"></span></div>
+              <div data-bind="text: formattedAddress" class="venue-address"></div>
+            </div>
+            <div class="venue-category">
+              <div class="glyphicon glyphicon-tag"></div>
+              <div data-bind="text: categories" class="content"></div>
+            </div>
+            <div class="venue-contact">
+              <div class="glyphicon glyphicon-earphone"></div>
+              <div data-bind="text: formattedPhone" class="content"></div>
+            </div>
+            <div class="venue-website">
+              <div class="glyphicon glyphicon-globe"></div>
+              <div data-bind="text: url" class="content"></div>
+            </div>
+            <div class="venue-review">
+              <div class="glyphicon glyphicon-user"></div>
+              <div data-bind="text: tips" class="content"></div>
+            </div>
+          </div>
+          <div class="right">
+            <img data-bind="attr: {src: featuredPhoto, id: id}" class="featured-photo"/>
+          </div>
+        </div>  
+        <!-- /ko -->         
+      </div>
+    </div>
+  </body>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <!-- use Web Font Loader to load fonts: https://github.com/typekit/webfontloader -->
+  <script src="http://ajax.googleapis.com/ajax/libs/webfont/1.5.6/webfont.js"></script>
+  <!-- add async js source to avoid render blocking -->
+  <script src="build/loadfont.js" async></script>
+  <!-- inline CSS to optimize CSS delivery: https://developers.google.com/speed/docs/insights/OptimizeCSSDelivery -->
+  <script src="build/loadcss.js" async></script>
+  <script src="build/app.min.js" async></script>
+</html>
